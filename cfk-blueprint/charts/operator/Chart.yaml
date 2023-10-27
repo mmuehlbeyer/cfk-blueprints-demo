@@ -1,0 +1,17 @@
+apiVersion: v1
+appVersion: 2.7.0
+description: A Helm chart to deploy Confluent Platform
+home: https://www.confluent.io/
+keywords:
+- Confluent
+- Confluent Operator
+- Confluent
+- Confluent Platform
+- CFK
+maintainers:
+- email: operator@confluent.io
+  name: Confluent Operator
+name: operator
+sources:
+- https://docs.confluent.io/operator/current/overview.html
+version: 0.824.2

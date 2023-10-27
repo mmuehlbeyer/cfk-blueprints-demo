@@ -1,0 +1,73 @@
+{{- if .Values.rbac }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app: "confluent-orchestrator"
+    app.kubernetes.io/name: {{ .Values.name }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/component: "confluent-orchestrator"
+    helm.sh/chart: {{ include "confluent-orchestrator.chart" . }}
+  name: {{ .Values.name }}
+rules:
+  - apiGroups:
+      - platform.confluent.io
+    resources:
+      - '*'
+    verbs:
+      - '*'
+  - apiGroups:
+    - cluster.cpc.platform.confluent.io
+    resources:
+    - '*'
+    verbs:
+      - '*'
+  - apiGroups:
+      - core.cpc.platform.confluent.io
+    resources:
+      - '*'
+    verbs:
+      - '*'
+  - apiGroups:
+      - apps.cpc.platform.confluent.io
+    resources:
+      - '*'
+    verbs:
+      - '*'
+  - apiGroups:
+      - ""
+    resources:
+      - secrets
+      - configmaps
+      - namespaces
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - install.cpc.platform.confluent.io
+    resources:
+      - cpcagentinstalls
+    verbs:
+      - '*'
+  - apiGroups:
+      - admissionregistration.k8s.io
+    resources:
+      - validatingwebhookconfigurations
+    verbs:
+      - get
+      - update
+  - apiGroups:
+      - rbac.authorization.k8s.io
+    resources:
+      - clusterrolebindings
+    verbs:
+      - get
+      - list
+      - delete
+{{- end }}

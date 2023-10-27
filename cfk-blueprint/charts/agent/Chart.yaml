@@ -1,0 +1,18 @@
+apiVersion: v1
+appVersion: 2.7.0
+description: A Helm chart to manage connector service to enable single or multi-site
+  environment.
+home: https://www.confluent.io/
+keywords:
+- CFK Blueprint
+- Confluent Agent
+- Confluent
+- Confluent Platform
+- CFK
+maintainers:
+- email: operator@confluent.io
+  name: Confluent Blueprint
+name: agent
+sources:
+- https://docs.confluent.io/operator/current/overview.html
+version: 0.300.2

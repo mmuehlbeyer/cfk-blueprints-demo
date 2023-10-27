@@ -1,0 +1,186 @@
+{{- $_ := required "Namespace is required" .Release.Namespace }}
+{{- $_ := required "Name of Agent is required." .Values.name }}
+{{- $mode := default "Local" .Values.mode }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: "confluent-agent"
+    app.kubernetes.io/name: {{ .Values.name }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/component: "confluent-agent"
+    helm.sh/chart: {{ include "confluent-agent.chart" . }}
+    version: {{ .Values.image.tag }}
+  name: {{ .Values.name }}
+  namespace:  {{ .Release.Namespace }}
+spec:
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ .Values.name }}
+      app: "confluent-agent"
+  revisionHistoryLimit: 1
+  progressDeadlineSeconds: 300
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        {{- range $key, $value := .Values.pod.annotations }}
+          {{ $key }}: {{ $value | quote }}
+          {{- end }}
+      labels:
+        app: "confluent-agent"
+        app.kubernetes.io/name: {{ .Values.name }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        confluent-platform: "true"
+        version: {{ .Values.image.tag }}
+        {{- range $key, $value := .Values.pod.labels }}
+        {{ $key }}: {{ $value | quote }}
+        {{- end }}
+    spec:
+      {{- if not (empty $.Values.affinity) }}
+      affinity:
+{{ toYaml .Values.affinity | trim | indent 8 }}
+      {{- end }}
+      {{- if not (empty $.Values.tolerations) }}
+      tolerations:
+{{ toYaml .Values.tolerations | trim | indent 6 }}
+      {{- end }}
+      {{- if .Values.podSecurity.enabled }}
+      securityContext:
+{{ toYaml .Values.podSecurity.securityContext | indent 8 }}
+      {{- end }}
+      containers:
+      - name: pull
+        command: ["/opt/cpc-agent"]
+        args:
+        - manager
+        - --debug={{ .Values.debug }}
+        - --mode={{ $mode }}
+        - --type=pull
+        - --agent-install-name={{ .Values.agentInstallName }}
+        {{- if gt (int (.Values.replicas)) 1 }}
+        - --enable-leader-election
+        {{- end }}
+        image: {{ .Values.image.registry }}/{{ .Values.image.repository }}:{{.Values.image.tag }}
+        ports:
+        - name: pull-metrics
+          containerPort: 7778
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        readinessProbe:
+          httpGet:
+            port: 8080
+            path: /readyz
+        livenessProbe:
+          httpGet:
+            port: 8080
+            path: /healthz
+        resources:
+{{ toYaml .Values.resources | trim | indent 10 }}
+        env:
+          - name: NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+        {{- if eq $mode "Remote" }}
+          {{- if and (empty .Values.remoteKubeConfig.secretRef) (empty .Values.remoteKubeConfig.directoryPathInContainer) }}
+          {{- $_ := required "secretRef or directoryPathInContainer must be configured when mode is Remote" .Values.remoteKubeConfig.secretRef }}
+          {{- end }}
+          {{- if .Values.remoteKubeConfig.secretRef }}
+          - name: REMOTE_KUBE_CONFIG_SECRET_NAME
+            value: {{ .Values.remoteKubeConfig.secretRef }}
+          {{- end }}
+          {{- if .Values.remoteKubeConfig.directoryPathInContainer }}
+          - name: REMOTE_KUBE_CONFIG_DIRECTORY_PATH
+            value: {{ .Values.remoteKubeConfig.directoryPathInContainer }}
+          {{- end }}
+        {{- end }}
+        {{- if .Values.clusterRoles.rackAssignment.create }}
+          - name: CP_RACK_AWARENESS_CLUSTER_ROLE_NAME
+            value: {{ .Values.clusterRoles.rackAssignment.name }}
+        {{- end }}
+        {{- if .Values.containerSecurity.enabled }}
+        securityContext:
+{{ toYaml .Values.containerSecurity.securityContext | indent 10 }}
+        {{- end }}
+        {{- if and (eq $mode "Remote") (.Values.remoteKubeConfig.secretRef) }}
+        volumeMounts:
+          - mountPath: /mnt/kubeconfigs/
+            name: remote-kubeconfig
+            readOnly: true
+        {{- end }}
+      - name: push
+        command: ["/opt/cpc-agent"]
+        args:
+        - manager
+        - --debug={{ .Values.debug }}
+        - --mode={{ $mode }}
+        - --type=push
+        - --agent-install-name={{ .Values.agentInstallName }}
+        - --metrics-bind-address=0.0.0.0:7779
+        - --health-probe-bind-address=0.0.0.0:8081
+  {{- if gt (int (.Values.replicas)) 1 }}
+        - --enable-leader-election
+        {{- end }}
+        image: {{ .Values.image.registry }}/{{ .Values.image.repository }}:{{.Values.image.tag }}
+        ports:
+        - name: push-metrics
+          containerPort: 7779
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        readinessProbe:
+          httpGet:
+            port: 8081
+            path: /readyz
+        livenessProbe:
+          httpGet:
+            port: 8081
+            path: /healthz
+        resources:
+{{ toYaml .Values.resources | trim | indent 10 }}
+        env:
+          - name: NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+        {{- if eq $mode "Remote" }}
+          {{- if and (empty .Values.remoteKubeConfig.secretRef) (empty .Values.remoteKubeConfig.directoryPathInContainer) }}
+          {{- $_ := required "secretRef or directoryPathInContainer must be configured when mode is Remote" .Values.remoteKubeConfig.secretRef }}
+          {{- end }}
+          {{- if .Values.remoteKubeConfig.secretRef }}
+          - name: REMOTE_KUBE_CONFIG_SECRET_NAME
+            value: {{ .Values.remoteKubeConfig.secretRef }}
+          {{- end }}
+          {{- if .Values.remoteKubeConfig.directoryPathInContainer }}
+          - name: REMOTE_KUBE_CONFIG_DIRECTORY_PATH
+            value: {{ .Values.remoteKubeConfig.directoryPathInContainer }}
+          {{- end }}
+        {{- end }}
+        {{- if .Values.containerSecurity.enabled }}
+        securityContext:
+{{ toYaml .Values.containerSecurity.securityContext | indent 10 }}
+        {{- end }}
+      {{- if and (eq $mode "Remote") (.Values.remoteKubeConfig.secretRef) }}
+        volumeMounts:
+          - mountPath: /mnt/kubeconfigs/
+            name: remote-kubeconfig
+            readOnly: true
+      volumes:
+        - name: remote-kubeconfig
+          secret:
+            defaultMode: 420
+            secretName: {{ .Values.remoteKubeConfig.secretRef }}
+      {{- end }}
+      {{- if and .Values.imagePullSecretRef (not .Values.serviceAccount.create) }}
+      imagePullSecrets:
+        - name: {{ .Values.imagePullSecretRef }}
+      {{- end }}
+      serviceAccountName: {{ template "confluent-agent.service-account" . }}
+      restartPolicy: Always
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}

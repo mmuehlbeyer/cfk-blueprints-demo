@@ -1,0 +1,135 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app: "confluent-agent"
+    app.kubernetes.io/name: {{ .Values.name }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/component: "confluent-agent"
+    helm.sh/chart: {{ include "confluent-agent.chart" . }}
+  name: {{ .Values.name }}
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - pods/exec
+      - pods
+      - pods/status
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - platform.confluent.io
+    resources:
+      - '*'
+    verbs:
+      - '*'
+  - apiGroups:
+      - ""
+    resources:
+      - secrets
+      - configmaps
+      - services
+      - namespaces
+    verbs:
+      - '*'
+  - apiGroups:
+      - ""
+    resources:
+      - serviceaccounts
+    verbs:
+      - get
+      - create
+      - update
+      - delete
+{{- if .Values.clusterRoles.rackAssignment.create }}
+  - apiGroups:
+      - "rbac.authorization.k8s.io"
+    resources:
+      - clusterrolebindings
+      - rolebindings
+    verbs:
+      - get
+      - create
+      - update
+      - delete
+  - apiGroups:
+      - "rbac.authorization.k8s.io"
+    resources:
+      - clusterroles
+    verbs:
+      - get
+  - apiGroups:
+      - ""
+    resources:
+      - nodes
+    verbs:
+      - get
+      - list
+{{- end }}
+  - apiGroups:
+      - "apps"
+    resources:
+      - deployments
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+    - networking.k8s.io
+    resources:
+      - ingresses
+      - ingresses/status
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - install.cpc.platform.confluent.io
+    resources:
+      - cpcagentinstalls
+      - cpcagentinstalls/status
+    verbs:
+      - '*'
+  - apiGroups:
+      - core.cpc.platform.confluent.io
+    resources:
+      - cpchealthchecks
+      - cpchealthchecks/status
+    verbs:
+      - get
+      - list
+      - patch
+      - watch
+---
+{{- if .Values.clusterRoles.rackAssignment.create }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app: "confluent-agent"
+    app.kubernetes.io/name: {{ .Values.name }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/component: "confluent-agent"
+    helm.sh/chart: {{ include "confluent-agent.chart" . }}
+  name: {{ .Values.clusterRoles.rackAssignment.name }}
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - nodes
+      - pods
+      - pods/status
+    verbs:
+      - get
+      - list
+{{- end }}
+
+

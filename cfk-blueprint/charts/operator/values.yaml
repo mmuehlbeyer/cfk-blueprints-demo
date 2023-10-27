@@ -1,0 +1,119 @@
+enabled: false
+## Confluent operator name
+##
+name: confluent-operator
+###
+## Image pull secret
+imagePullSecretRef:  confluent-registry
+## Confluent Operator Image Information
+##
+image:
+  registry: docker.io
+  repository: confluentinc/confluent-operator
+  pullPolicy: IfNotPresent
+  tag: "0.824.2"
+
+###
+## Priority class for Confluent Operator pod
+priorityClassName: ""
+## Number of pods for Operator
+## Enables leader election if more than one replica
+replicas: 1
+## Confluent Operator Pod Resources
+##
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 256Mi
+## Pod termination grace-period
+##
+terminationGracePeriodSeconds: 30
+## Enable debugging
+##
+debug: false
+##
+## Configure affinity,
+## More information here https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
+##
+affinity: {}
+##  Example for nodeAffinity, configure as required.
+##affinity:
+##  nodeAffinity:
+##    requiredDuringSchedulingIgnoredDuringExecution:
+##      nodeSelectorTerms:
+##      - matchExpressions:
+##        - key: "node-role.kubernetes.io/compute"
+##          operator: In
+##          values:
+##          - "true"
+
+##
+## Configure tolerations
+## https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+##
+tolerations: []
+##
+##tolerations:
+##- key: "dedicated"
+##  operator: "Equal"
+##  value: "operator"
+##  effect: "NoSchedule"
+
+## Pod Security Context
+##
+podSecurity:
+  enabled: true
+  securityContext:
+    fsGroup: 1001
+    runAsUser: 1001
+    runAsNonRoot: true
+
+## Container Security Context
+## Container security context overrides security context defined at pod level.
+## For example following container security context would override the
+## default PodSecurityContext defined above
+##
+## securityContext:
+##   runAsUser: 2001
+##   runAsNonRoot: false
+##
+## Refer to this documentation on how configure security context for container
+## https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-containerh
+##
+containerSecurity:
+  enabled: false
+  securityContext: {}
+
+##
+## ServiceAccount
+## If enabled it will create, otherwise it will
+## not create
+##
+serviceAccount:
+  create: true
+  name: ""
+## Enable Kubernetes RBAC
+## When set to true, it will create a proper role/rolebinding or cluster/clusterrolebinding based on namespaced field.
+## If a user doesn't have permission to create role/rolebinding then they can disable rbac field and
+## create required resources out of band to be used by the Operator. In this case, follow the
+## templates/clusterrole.yaml and templates/clusterrolebiding.yaml to create proper required resources.
+rbac: true
+
+## Enable extra Kubernetes API groups in role/clusterrole resource
+## When set to true, it will add apiGroups to role/clusterrole for OpenShift route resource
+clusterRole:
+  openshift: true
+##
+## Pod annotations/labels configurations
+##
+pod:
+  annotations:
+    prometheus.io/path: "/metrics"
+    prometheus.io/port: "7778"
+    prometheus.io/scrape: "true"
+  labels: {}
+# labels:
+#   key: "value"

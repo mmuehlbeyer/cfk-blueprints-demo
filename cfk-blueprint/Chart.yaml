@@ -1,0 +1,26 @@
+apiVersion: v2
+appVersion: 2.7.0
+dependencies:
+- condition: orchestrator.enabled
+  name: orchestrator
+  repository: file://./charts/orchestrator
+  version: '>=0.270.0'
+- condition: agent.enabled
+  name: agent
+  repository: file://./charts/agent
+  version: '>=0.270.0'
+- condition: operator.enabled
+  name: operator
+  repository: file://./charts/operator
+  version: '>=0.770.0'
+description: A Helm chart to deploy CFK Blueprint
+home: https://www.confluent.io/
+keywords:
+- CFK Blueprint
+maintainers:
+- email: operator@confluent.io
+  name: CFK Blueprint
+name: cfk-blueprint
+sources:
+- https://docs.confluent.io/operator/current/overview.html
+version: 0.300.2

@@ -1,0 +1,126 @@
+## Confluent Agent name
+##
+name: confluent-agent
+
+## Confluent Agent Mode
+## remote can only be `Local` or `Remote`
+mode: Local
+## Remote KubeConfig
+## If mode is "Remote", it requires .kubeconfig to communicate with control plane.
+remoteKubeConfig:
+  secretRef: ""
+  directoryPathInContainer: ""
+
+## Confluent Agent Install Name
+agentInstallName: confluent-agent-install
+
+###
+## Image pull secret
+imagePullSecretRef:  confluent-registry
+## Confluent Agent Image Information
+##
+image:
+  registry: docker.io
+  repository: confluentinc/cpc-operator
+  pullPolicy: IfNotPresent
+  tag: "0.300.2"
+
+## Number of pods for Agent
+## Enables leader election if more than one replica
+replicas: 1
+
+## Confluent Agent Pod Resource
+##
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 256Mi
+## Pod termination grace-period
+##
+terminationGracePeriodSeconds: 30
+
+## Enable debugging
+##
+debug: false
+
+affinity: {}
+##  Example for nodeAffinity, configure as required.
+##affinity:
+##  nodeAffinity:
+##    requiredDuringSchedulingIgnoredDuringExecution:
+##      nodeSelectorTerms:
+##      - matchExpressions:
+##        - key: "node-role.kubernetes.io/compute"
+##          operator: In
+##          values:
+##          - "true"
+
+##
+## Configure tolerations
+## https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+##
+tolerations: []
+##
+##tolerations:
+##- key: "dedicated"
+##  operator: "Equal"
+##  value: "operator"
+##  effect: "NoSchedule"
+
+## Pod Security Context
+##
+podSecurity:
+  enabled: true
+  securityContext:
+    fsGroup: 1001
+    runAsUser: 1001
+    runAsNonRoot: true
+
+## Container Security Context
+## Container security context overrides security context defined at pod level.
+## For example following container security context would override the
+## default PodSecurityContext defined above
+##
+## securityContext:
+##   runAsUser: 2001
+##   runAsNonRoot: false
+##
+## Refer to this documentation on how configure security context for container
+## https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-containerh
+##
+containerSecurity:
+  enabled: false
+  securityContext: {}
+
+##
+## Pod annotations/labels configurations
+##
+pod:
+  annotations:
+    prometheus.io/path: "/metrics"
+    prometheus.io/port: "7778"
+    prometheus.io/scrape: "true"
+  labels: {}
+# labels:
+#   key: "value"
+
+
+##
+## By default, it creates a serviceAccount for agent.
+## User can also provide their own serviceAccount
+##
+serviceAccount:
+  create: true
+  name: ""
+##
+## Create a clusterRole for CP RackAwareness capability.
+## Agent configures this clusterRole for cp server rack-awareness workflow.
+## In future release, agent-operator will create  required ClusterRoles part of the bootstrapping process.
+##
+clusterRoles:
+  rackAssignment:
+    create: true # disabling this will impact rack-awareness capability for cp-server.
+    name: cp-server-rack-awareness-cluster-role

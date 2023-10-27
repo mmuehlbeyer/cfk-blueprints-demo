@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: "confluent-agent"
+    app.kubernetes.io/name: {{ .Values.name }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/component: "confluent-agent"
+    helm.sh/chart: {{ include "confluent-agent.chart" . }}
+  name: {{ .Values.name }}
+  namespace:  {{ .Release.Namespace }}
+spec:
+  ports:
+    - name: pull-metrics
+      port: 7778
+      protocol: TCP
+      targetPort: 7778
+    - name: push-metrics
+      port: 7779
+      protocol: TCP
+      targetPort: 7779
+  selector:
+    app: "confluent-agent"
+    app.kubernetes.io/name: {{ .Values.name }}
+  type: ClusterIP

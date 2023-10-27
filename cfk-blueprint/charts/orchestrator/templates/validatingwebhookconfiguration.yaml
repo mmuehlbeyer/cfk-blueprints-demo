@@ -1,0 +1,106 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  labels:
+    app: "confluent-orchestrator"
+    app.kubernetes.io/name: {{ .Values.name }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/component: "confluent-orchestrator"
+    helm.sh/chart: {{ include "confluent-orchestrator.chart" . }}
+  name: webhooks.controlplane.cpc.platform.confluent.io
+webhooks:
+  - admissionReviewVersions:
+      - v1beta1
+    clientConfig:
+      service:
+        name: {{ .Values.name }}
+        namespace: {{ .Release.Namespace }}
+        path: /cpc-core/validate
+        port: {{ .Values.webhooks.port }}
+    failurePolicy: Fail
+    name: core.webhooks.cpc.platform.confluent.io
+    rules:
+      - apiGroups:
+          - core.cpc.platform.confluent.io
+        apiVersions:
+          - v1beta1
+        operations:
+          - CREATE
+          - UPDATE
+          - DELETE
+        resources:
+          - '*'
+        scope: Namespaced
+    sideEffects: None
+  - admissionReviewVersions:
+      - v1beta1
+    clientConfig:
+      service:
+        name: {{ .Values.name }}
+        namespace: {{ .Release.Namespace }}
+        path: /cpc-cluster/validate
+        port: {{ .Values.webhooks.port }}
+    failurePolicy: Fail
+    name: cluster.webhooks.cpc.platform.confluent.io
+    rules:
+      - apiGroups:
+          - cluster.cpc.platform.confluent.io
+        apiVersions:
+          - v1beta1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - '*'
+        scope: Namespaced
+    sideEffects: None
+  - admissionReviewVersions:
+      - v1beta1
+    clientConfig:
+      service:
+        name: {{ .Values.name }}
+        namespace: {{ .Release.Namespace }}
+        path: /cpc-apps/validate
+        port: {{ .Values.webhooks.port }}
+    failurePolicy: Fail
+    name: apps.webhooks.cpc.platform.confluent.io
+    rules:
+      - apiGroups:
+          - apps.cpc.platform.confluent.io
+        apiVersions:
+          - v1beta1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - '*'
+        scope: Namespaced
+    sideEffects: None
+  - admissionReviewVersions:
+      - v1beta1
+    clientConfig:
+      service:
+        name: {{ .Values.name }}
+        namespace: {{ .Release.Namespace }}
+        path: /cpc-internal/validate
+        port: {{ .Values.webhooks.port }}
+    failurePolicy: Fail
+    name: internal.webhooks.cpc.platform.confluent.io
+    objectSelector:
+      matchExpressions:
+        - key: cpc.platform.confluent.io/managed
+          operator: In
+          values: [ "true" ]
+    rules:
+      - apiGroups:
+          - platform.confluent.io
+        apiVersions:
+          - v1beta1
+        operations:
+          - UPDATE
+          - DELETE
+        resources:
+          - '*'
+        scope: Namespaced
+    sideEffects: None

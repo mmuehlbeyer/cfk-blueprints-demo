@@ -1,0 +1,23 @@
+{{- $_ := required "Namespace is required" .Release.Namespace }}
+{{- $_ := required "Name of Agent is required." .Values.name }}
+{{- $mode := default "Local" .Values.mode }}
+apiVersion: install.cpc.platform.confluent.io/v1beta1
+kind: CPCAgentInstall
+metadata:
+  labels:
+    app: "confluent-agent"
+    app.kubernetes.io/name: {{ .Values.name }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/component: "confluent-agent"
+    helm.sh/chart: {{ include "confluent-agent.chart" . }}
+  name: {{ .Values.agentInstallName }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  agent:
+    name: {{ .Values.name }}
+    mode: {{ $mode }}
+    probePolicy:
+      periodInSeconds: 5
+      failureThreshold: 3
+      successThreshold: 3

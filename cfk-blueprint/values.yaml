@@ -1,0 +1,6 @@
+orchestrator:
+  enabled: false
+agent:
+  enabled: false
+operator:
+  enabled: false
