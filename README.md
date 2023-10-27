@@ -1,1 +1,0 @@
-# cfk-blueprints-demo
